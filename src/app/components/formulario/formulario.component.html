@@ -1,0 +1,264 @@
+<div class="card">
+  <h2>📝 Formulário de Cálculo de Crédito de Carbono</h2>
+  
+  <!-- Informação do Evento -->
+  <div *ngIf="evento" class="evento-info">
+    <h4>🎯 Evento Configurado</h4>
+    <p><strong>Nome:</strong> {{ evento.nomeEvento || 'Evento' }}</p>
+    <p><strong>Local:</strong> {{ evento.cidade }}, {{ evento.estado }}, {{ evento.pais }}</p>
+    <p *ngIf="evento.dataInicio"><strong>Data:</strong> {{ evento.dataInicio }} <span *ngIf="evento.dataFim">até {{ evento.dataFim }}</span></p>
+  </div>
+  
+  <p style="margin-bottom: 20px; color: #666;">
+    Preencha os dados da sua viagem para calcular a emissão de CO₂ e os créditos de carbono gerados.
+  </p>
+
+  <form [formGroup]="formulario" (ngSubmit)="calcular()">
+    <!-- Dados Pessoais -->
+    <h3 style="margin-top: 30px; margin-bottom: 15px; color: #2d8659;">👤 Dados Pessoais</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nome Completo *</label>
+        <input type="text" formControlName="nome" [class.error]="campoInvalido('nome')">
+        <div class="error-message" *ngIf="campoInvalido('nome')">
+          Nome é obrigatório (mínimo 3 caracteres)
+        </div>
+      </div>
+      <div class="form-group">
+        <label>E-mail *</label>
+        <input type="email" formControlName="email" [class.error]="campoInvalido('email')">
+        <div class="error-message" *ngIf="campoInvalido('email')">
+          E-mail inválido
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>CPF *</label>
+        <input type="text" formControlName="cpf" placeholder="000.000.000-00" [class.error]="campoInvalido('cpf')">
+        <div class="error-message" *ngIf="campoInvalido('cpf')">
+          CPF é obrigatório
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Telefone *</label>
+        <input type="text" formControlName="telefone" placeholder="(00) 00000-0000" [class.error]="campoInvalido('telefone')">
+        <div class="error-message" *ngIf="campoInvalido('telefone')">
+          Telefone é obrigatório
+        </div>
+      </div>
+    </div>
+
+    <!-- Trechos de Viagem -->
+    <h3 style="margin-top: 30px; margin-bottom: 15px; color: #2d8659;">🚗 Trechos de Viagem</h3>
+    <p style="margin-bottom: 15px; color: #666;">
+      Adicione os meios de transporte utilizados na viagem. Exemplo: Avião até a cidade + Carro até o evento.
+    </p>
+
+    <div *ngFor="let trecho of trechos; let i = index; trackBy: trackByTrechoIndex" class="card" style="background: #f8f9fa; margin-bottom: 15px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h4 style="color: #2d8659; margin: 0;">Trecho {{ i + 1 }}</h4>
+        <button *ngIf="trechos.length > 1" type="button" (click)="removerTrecho(i)" class="btn-danger" style="padding: 6px 12px; font-size: 14px;">
+          Remover
+        </button>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Meio de Transporte *</label>
+          <select [ngModel]="trecho.meioTransporte" (ngModelChange)="atualizarTrecho(i, 'meioTransporte', $event)" [ngModelOptions]="{standalone: true}">
+            <option value="">Selecione</option>
+            <option *ngFor="let meio of meiosTransporte" [value]="meio.value">{{ meio.label }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Distância (km)</label>
+          <input type="number" [ngModel]="trecho.distanciaKm || ''" (ngModelChange)="atualizarTrecho(i, 'distanciaKm', $event ? +$event : undefined)" [ngModelOptions]="{standalone: true}" min="0" placeholder="Deixe em branco para cálculo automático">
+          <small style="color: #666;">Se não preenchido, será calculado automaticamente</small>
+        </div>
+      </div>
+
+      <!-- Origem para Avião e Trem -->
+      <div *ngIf="mostrarCamposAviao(trecho) || trecho.meioTransporte === 'trem'" class="form-row" style="margin-top: 15px;">
+        <h5 style="width: 100%; margin-bottom: 10px; color: #2d8659;">📍 Origem do Trecho</h5>
+        <div class="form-group">
+          <label>Estado de Origem *</label>
+          <select [ngModel]="trecho.origemEstado || ''" (ngModelChange)="atualizarTrecho(i, 'origemEstado', $event); configurarAutocompleteTrecho(i, $event)" [ngModelOptions]="{standalone: true}">
+            <option value="">Selecione</option>
+            <option *ngFor="let estado of estadosBrasil" [value]="estado">{{ estado }}</option>
+          </select>
+        </div>
+        <div class="form-group autocomplete-wrapper" style="flex: 2;">
+          <label>Cidade de Origem *</label>
+          <input type="text" 
+                 [ngModel]="trecho.origemCidade || ''" 
+                 (ngModelChange)="atualizarTrecho(i, 'origemCidade', $event)" 
+                 [ngModelOptions]="{standalone: true}"
+                 (focus)="mostrarAutocompletePorTrecho[i] = true"
+                 (blur)="esconderAutocompleteTrecho(i)">
+          <div class="autocomplete-list" *ngIf="mostrarAutocompletePorTrecho[i] && filtrarCidadesTrecho(i, trecho.origemCidade || '').length > 0">
+            <div class="autocomplete-item" 
+                 *ngFor="let cidade of filtrarCidadesTrecho(i, trecho.origemCidade || '')"
+                 (click)="selecionarCidadeTrecho(i, cidade)">
+              {{ cidade.nome }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Destino para Avião e Trem (padrão evento, mas alterável) -->
+      <div *ngIf="mostrarCamposAviao(trecho) || trecho.meioTransporte === 'trem'" class="form-row" style="margin-top: 15px;">
+        <h5 style="width: 100%; margin-bottom: 10px; color: #2d8659;">🎯 Destino do Trecho</h5>
+        <div class="form-group">
+          <label>Estado de Destino</label>
+          <select [ngModel]="trecho.destinoEstado || evento?.estado || ''" (ngModelChange)="atualizarTrecho(i, 'destinoEstado', $event)" [ngModelOptions]="{standalone: true}">
+            <option value="">Selecione</option>
+            <option *ngFor="let estado of estadosBrasil" [value]="estado">{{ estado }}</option>
+          </select>
+          <small style="color: #666;">Padrão: {{ evento?.cidade }}, {{ evento?.estado }}</small>
+        </div>
+        <div class="form-group" style="flex: 2;">
+          <label>Cidade de Destino</label>
+          <input type="text" 
+                 [ngModel]="trecho.destinoCidade || evento?.cidade || ''" 
+                 (ngModelChange)="atualizarTrecho(i, 'destinoCidade', $event)" 
+                 [ngModelOptions]="{standalone: true}"
+                 placeholder="Padrão: cidade do evento">
+        </div>
+      </div>
+
+      <!-- CEP de Origem para Carro, Moto, Ônibus -->
+      <div *ngIf="mostrarCamposCarro(trecho) || trecho.meioTransporte === 'motocicleta' || trecho.meioTransporte === 'onibus'" class="form-row" style="margin-top: 15px;">
+        <h5 style="width: 100%; margin-bottom: 10px; color: #2d8659;">📍 Origem do Trecho</h5>
+        <div class="form-group">
+          <label>CEP de Origem *</label>
+          <input type="text" 
+                 [ngModel]="trecho.cepOrigem || ''" 
+                 (ngModelChange)="atualizarCepTrecho(i, $event)" 
+                 [ngModelOptions]="{standalone: true}"
+                 placeholder="00000-000" 
+                 maxlength="9">
+          <small style="color: #666;">CEP de onde você parte neste trecho</small>
+          <div *ngIf="enderecosCEP[i]" style="margin-top: 5px; padding: 8px; background: #e8f5e9; border-radius: 4px; font-size: 0.9em;">
+            <strong>Endereço encontrado:</strong> {{ enderecosCEP[i].logradouro }}, {{ enderecosCEP[i].bairro }}, {{ enderecosCEP[i].localidade }}-{{ enderecosCEP[i].uf }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Campos específicos para Carro -->
+      <div *ngIf="mostrarCamposCarro(trecho)" class="form-row" style="margin-top: 15px;">
+        <div class="form-group">
+          <label>Tipo de Combustível *</label>
+          <select [ngModel]="trecho.tipoCombustivel || ''" (ngModelChange)="atualizarTrecho(i, 'tipoCombustivel', $event)" [ngModelOptions]="{standalone: true}">
+            <option value="">Selecione</option>
+            <option *ngFor="let tipo of tiposCombustivel" [value]="tipo.value">{{ tipo.label }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Número de Passageiros *</label>
+          <input type="number" [ngModel]="trecho.numeroPassageiros || 1" (ngModelChange)="atualizarTrecho(i, 'numeroPassageiros', $event ? +$event : 1)" [ngModelOptions]="{standalone: true}" min="1">
+        </div>
+        <div class="form-group">
+          <label>Consumo Médio (km/l)</label>
+          <input type="number" [ngModel]="trecho.consumoMedio || ''" (ngModelChange)="atualizarTrecho(i, 'consumoMedio', $event ? +$event : undefined)" [ngModelOptions]="{standalone: true}" min="0" placeholder="Opcional">
+        </div>
+      </div>
+
+      <!-- Campos específicos para Avião -->
+      <div *ngIf="mostrarCamposAviao(trecho)" class="form-row" style="margin-top: 15px;">
+        <div class="form-group">
+          <label>Classe do Voo *</label>
+          <select [ngModel]="trecho.classeVoo || ''" (ngModelChange)="atualizarTrecho(i, 'classeVoo', $event)" [ngModelOptions]="{standalone: true}">
+            <option value="">Selecione</option>
+            <option *ngFor="let classe of classesVoo" [value]="classe.value">{{ classe.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" (click)="adicionarTrecho()" class="btn-secondary" style="margin-bottom: 20px;">
+      ➕ Adicionar Outro Trecho
+    </button>
+
+    <!-- Datas -->
+    <h3 style="margin-top: 30px; margin-bottom: 15px; color: #2d8659;">📅 Datas da Viagem</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data da Viagem *</label>
+        <input type="date" formControlName="dataViagem" [class.error]="campoInvalido('dataViagem')">
+        <div class="error-message" *ngIf="campoInvalido('dataViagem')">
+          Data da viagem é obrigatória
+        </div>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" formControlName="idaEVolta" style="width: auto; margin-right: 8px;">
+          Ida e Volta
+        </label>
+      </div>
+      <div class="form-group" *ngIf="formulario.get('idaEVolta')?.value">
+        <label>Data de Retorno *</label>
+        <input type="date" formControlName="dataRetorno" [class.error]="campoInvalido('dataRetorno')">
+        <div class="error-message" *ngIf="campoInvalido('dataRetorno')">
+          Data de retorno é obrigatória
+        </div>
+      </div>
+    </div>
+
+    <!-- Observações -->
+    <div class="form-group" style="margin-top: 20px;">
+      <label>Observações</label>
+      <textarea formControlName="observacoes" rows="3" placeholder="Informações adicionais sobre a viagem..."></textarea>
+    </div>
+
+    <!-- Botões -->
+    <div style="margin-top: 30px; display: flex; gap: 15px;">
+      <button type="submit" [disabled]="calculado || carregando">
+        <span *ngIf="!carregando">🔢 Calcular Emissão</span>
+        <span *ngIf="carregando">⏳ Calculando...</span>
+      </button>
+      <button type="button" (click)="resetarFormulario()" class="btn-secondary" [disabled]="carregando">🔄 Limpar</button>
+    </div>
+  </form>
+
+  <!-- Loading -->
+  <div *ngIf="carregando" class="loading">
+    <p>⏳ Calculando distância e emissão de CO₂...</p>
+  </div>
+
+  <!-- Resultado do Cálculo -->
+  <div *ngIf="calculado && resultado && !carregando" class="result-card">
+    <h3>📊 Resultado do Cálculo</h3>
+    <div class="result-value">{{ resultado.emissaoCO2 }} kg CO₂</div>
+    <p style="margin: 15px 0;">
+      <strong>Distância Total:</strong> {{ resultado.distanciaTotal }} km
+    </p>
+    
+    <!-- Detalhes dos Trechos -->
+    <div *ngIf="resultado.trechos && resultado.trechos.length > 0" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3);">
+      <h4 style="color: white; margin-bottom: 10px;">Detalhes por Trecho:</h4>
+      <div *ngFor="let item of resultado.trechos; let i = index" style="margin-bottom: 10px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px;">
+        <p style="margin: 5px 0;"><strong>Trecho {{ i + 1 }}:</strong> {{ formatarMeioTransporte(item.trecho.meioTransporte) }}</p>
+        <p style="margin: 5px 0;">Distância: {{ item.distancia }} km | Emissão: {{ item.emissao }} kg CO₂</p>
+      </div>
+    </div>
+    <p style="margin: 15px 0;">
+      <strong>Créditos de Carbono:</strong> {{ resultado.creditosCarbono }} toneladas de CO₂ equivalente
+    </p>
+    <p style="margin: 10px 0;">
+      <strong>Equivalente a:</strong> {{ resultado.equivalenteArvores }} árvores plantadas
+    </p>
+    <p style="margin: 10px 0;">
+      <strong>Ou:</strong> {{ resultado.equivalenteKmCarro }} km de carro
+    </p>
+    
+    <button type="button" (click)="enviar()" [disabled]="enviado" style="margin-top: 20px;">
+      {{ enviado ? '✅ Enviado com Sucesso!' : '💾 Salvar Cálculo' }}
+    </button>
+    
+    <div *ngIf="enviado" class="success-message" style="margin-top: 10px; color: white;">
+      Seu cálculo foi salvo! Você pode visualizá-lo na página de administrador.
+    </div>
+  </div>
+</div>
+

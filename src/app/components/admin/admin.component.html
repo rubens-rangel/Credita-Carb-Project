@@ -1,0 +1,228 @@
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div>
+      <h2>👨‍💼 Painel de Administrador</h2>
+      <p style="margin-bottom: 0; color: #666;">
+        Visualize e gerencie todos os cálculos de crédito de carbono realizados.
+      </p>
+    </div>
+    <button (click)="logout()" class="btn-danger" style="padding: 10px 20px;">
+      🚪 Sair
+    </button>
+  </div>
+
+  <!-- Configuração de Evento -->
+  <div class="card" style="background: #f8f9fa; border: 2px solid #2d8659;">
+    <h3 style="color: #2d8659; margin-bottom: 15px;">⚙️ Configuração do Evento</h3>
+    <p style="margin-bottom: 15px; color: #666;">
+      Configure o local do evento. O destino será preenchido automaticamente no formulário dos participantes.
+    </p>
+    
+    <div *ngIf="eventoAtual" class="evento-info" style="margin-bottom: 15px;">
+      <h4>Evento Atual Configurado</h4>
+      <p><strong>Nome:</strong> {{ eventoAtual.nomeEvento || 'Não informado' }}</p>
+      <p><strong>Local:</strong> {{ eventoAtual.cidade }}, {{ eventoAtual.estado }}, {{ eventoAtual.pais }}</p>
+      <p *ngIf="eventoAtual.cep"><strong>CEP:</strong> {{ eventoAtual.cep }}</p>
+      <p *ngIf="eventoAtual.dataInicio"><strong>Data:</strong> {{ eventoAtual.dataInicio }} <span *ngIf="eventoAtual.dataFim">até {{ eventoAtual.dataFim }}</span></p>
+    </div>
+
+    <form [formGroup]="eventoForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome do Evento</label>
+          <input type="text" formControlName="nomeEvento" placeholder="Ex: Conferência de Sustentabilidade 2024">
+        </div>
+        <div class="form-group">
+          <label>Cidade *</label>
+          <input type="text" formControlName="cidade" required>
+        </div>
+        <div class="form-group">
+          <label>Estado *</label>
+          <select formControlName="estado" required>
+            <option value="">Selecione</option>
+            <option *ngFor="let estado of estadosBrasil" [value]="estado">{{ estado }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>País *</label>
+          <input type="text" formControlName="pais" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>CEP do Evento *</label>
+          <input type="text" formControlName="cep" placeholder="00000-000" maxlength="9" required>
+          <small style="color: #666;">CEP do local onde será realizado o evento</small>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data de Início</label>
+          <input type="date" formControlName="dataInicio">
+        </div>
+        <div class="form-group">
+          <label>Data de Término</label>
+          <input type="date" formControlName="dataFim">
+        </div>
+      </div>
+      <div style="margin-top: 15px; display: flex; gap: 15px;">
+        <button type="button" (click)="salvarEvento()" class="btn-success">💾 Salvar Evento</button>
+        <button *ngIf="eventoAtual" type="button" (click)="removerEvento()" class="btn-danger">🗑️ Remover Evento</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Estatísticas Gerais -->
+  <div class="form-row" style="margin-top: 30px; margin-bottom: 30px;">
+    <div class="stats-card">
+      <h3>Total de Emissões</h3>
+      <div class="stats-value">{{ totalEmissao.toFixed(2) }} kg CO₂</div>
+    </div>
+    <div class="stats-card">
+      <h3>Créditos de Carbono</h3>
+      <div class="stats-value">{{ totalCreditos.toFixed(3) }} tCO₂</div>
+    </div>
+    <div class="stats-card">
+      <h3>Árvores Equivalentes</h3>
+      <div class="stats-value">{{ totalArvores }}</div>
+    </div>
+  </div>
+
+  <!-- Ações -->
+  <div style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
+    <button (click)="exportarParaExcel()">📊 Exportar para Excel/CSV</button>
+    <button (click)="exportarDados()">📥 Exportar JSON</button>
+    <button (click)="limparTodos()" class="btn-danger">🗑️ Limpar Todos</button>
+    <button (click)="carregarViagens()" class="btn-secondary">🔄 Atualizar</button>
+  </div>
+
+  <!-- Lista de Viagens -->
+  <div *ngIf="viagens.length === 0" style="text-align: center; padding: 40px; color: #666;">
+    <p style="font-size: 1.2em;">Nenhuma viagem cadastrada ainda.</p>
+    <p>Os cálculos realizados no formulário aparecerão aqui.</p>
+  </div>
+
+  <div *ngIf="viagens.length > 0">
+    <h3 style="margin-top: 30px; margin-bottom: 15px;">📋 Registros de Viagens ({{ viagens.length }})</h3>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>E-mail</th>
+          <th>Origem → Destino</th>
+          <th>Transporte</th>
+          <th>Data</th>
+          <th>Emissão CO₂</th>
+          <th>Créditos</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let viagem of viagens; let i = index">
+          <td>{{ viagem.nome }}</td>
+          <td>{{ viagem.email }}</td>
+          <td>
+            <span *ngIf="viagem.trechos && viagem.trechos.length > 0">
+              <span *ngFor="let trecho of viagem.trechos; let last = last">
+                <span *ngIf="trecho.origemCidade">{{ trecho.origemCidade }}, {{ trecho.origemEstado }}</span>
+                <span *ngIf="trecho.cepOrigem">CEP: {{ trecho.cepOrigem }}</span>
+                <span *ngIf="!last"> → </span>
+              </span>
+              → {{ viagem.destinoCidade }}, {{ viagem.destinoEstado }}
+            </span>
+            <span *ngIf="!viagem.trechos || viagem.trechos.length === 0">
+              {{ viagem.destinoCidade }}, {{ viagem.destinoEstado }}
+            </span>
+          </td>
+          <td>
+            <span *ngIf="viagem.trechos && viagem.trechos.length > 0">
+              <span *ngFor="let trecho of viagem.trechos; let last = last">
+                {{ formatarMeioTransporte(trecho.meioTransporte) }}<span *ngIf="!last"> + </span>
+              </span>
+            </span>
+            <span *ngIf="!viagem.trechos || viagem.trechos.length === 0">
+              {{ formatarMeioTransporte(viagem.meioTransporte || 'N/A') }}
+            </span>
+          </td>
+          <td>{{ formatarData(viagem.dataViagem) }}</td>
+          <td><strong>{{ viagem.resultado?.emissaoCO2 || 0 }} kg</strong></td>
+          <td>{{ viagem.resultado?.creditosCarbono || 0 }} tCO₂</td>
+          <td>
+            <button (click)="excluirViagem(i)" class="btn-danger" style="padding: 6px 12px; font-size: 14px;">
+              Excluir
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Detalhes Expandidos -->
+    <div style="margin-top: 30px;">
+      <h3>📊 Detalhes das Viagens</h3>
+      <div *ngFor="let viagem of viagens; let i = index" class="card" style="margin-top: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+          <div style="flex: 1;">
+            <h4 style="color: #667eea; margin-bottom: 10px;">{{ viagem.nome }}</h4>
+            <p><strong>E-mail:</strong> {{ viagem.email }}</p>
+            <p><strong>CPF:</strong> {{ viagem.cpf }}</p>
+            <p><strong>Telefone:</strong> {{ viagem.telefone }}</p>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #e0e0e0;">
+            <p><strong>Destino:</strong> {{ viagem.destinoCidade }}, {{ viagem.destinoEstado }}, {{ viagem.destinoPais }}</p>
+            
+            <!-- Trechos de Viagem -->
+            <div *ngIf="viagem.trechos && viagem.trechos.length > 0" style="margin-top: 10px;">
+              <p><strong>Trechos de Viagem:</strong></p>
+              <div *ngFor="let trecho of viagem.trechos; let i = index" style="margin-left: 20px; margin-top: 8px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                <p style="margin: 5px 0;"><strong>Trecho {{ i + 1 }}:</strong> {{ formatarMeioTransporte(trecho.meioTransporte) }}</p>
+                <p *ngIf="trecho.origemCidade" style="margin: 5px 0;"><strong>Origem:</strong> {{ trecho.origemCidade }}, {{ trecho.origemEstado }}</p>
+                <p *ngIf="trecho.destinoCidade" style="margin: 5px 0;"><strong>Destino:</strong> {{ trecho.destinoCidade }}, {{ trecho.destinoEstado }}</p>
+                <p *ngIf="trecho.cepOrigem" style="margin: 5px 0;"><strong>CEP de Origem:</strong> {{ trecho.cepOrigem }}</p>
+                <p *ngIf="trecho.distanciaKm" style="margin: 5px 0;"><strong>Distância:</strong> {{ trecho.distanciaKm }} km</p>
+                <p *ngIf="trecho.tipoCombustivel" style="margin: 5px 0;"><strong>Combustível:</strong> {{ trecho.tipoCombustivel }}</p>
+                <p *ngIf="trecho.numeroPassageiros" style="margin: 5px 0;"><strong>Passageiros:</strong> {{ trecho.numeroPassageiros }}</p>
+                <p *ngIf="trecho.classeVoo" style="margin: 5px 0;"><strong>Classe do Voo:</strong> {{ trecho.classeVoo }}</p>
+              </div>
+            </div>
+            
+            <!-- Compatibilidade com dados antigos -->
+            <div *ngIf="!viagem.trechos || viagem.trechos.length === 0">
+              <p><strong>Meio de Transporte:</strong> {{ formatarMeioTransporte(viagem.meioTransporte) }}</p>
+              <p *ngIf="viagem.distanciaKm"><strong>Distância:</strong> {{ viagem.distanciaKm }} km</p>
+              <p *ngIf="viagem.tipoCombustivel"><strong>Combustível:</strong> {{ viagem.tipoCombustivel }}</p>
+              <p *ngIf="viagem.numeroPassageiros"><strong>Passageiros:</strong> {{ viagem.numeroPassageiros }}</p>
+            </div>
+            <p><strong>Data da Viagem:</strong> {{ formatarData(viagem.dataViagem) }}</p>
+            <p *ngIf="viagem.idaEVolta"><strong>Data de Retorno:</strong> {{ formatarData(viagem.dataRetorno) }}</p>
+            <p *ngIf="viagem.idaEVolta"><strong>Tipo:</strong> Ida e Volta</p>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #e0e0e0;">
+            <div class="result-card" style="margin-top: 10px;">
+              <p><strong>Emissão de CO₂:</strong> {{ viagem.resultado?.emissaoCO2 || 0 }} kg</p>
+              <p><strong>Distância Total:</strong> {{ viagem.resultado?.distanciaTotal || viagem.resultado?.distanciaCalculada || 0 }} km</p>
+              <p><strong>Créditos de Carbono:</strong> {{ viagem.resultado?.creditosCarbono || 0 }} tCO₂</p>
+              <p><strong>Equivalente em Árvores:</strong> {{ viagem.resultado?.equivalenteArvores || 0 }}</p>
+              <p><strong>Equivalente em km de Carro:</strong> {{ viagem.resultado?.equivalenteKmCarro || 0 }} km</p>
+              
+              <!-- Detalhes por Trecho -->
+              <div *ngIf="viagem.resultado?.trechos && viagem.resultado.trechos.length > 0" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3);">
+                <p style="margin-bottom: 10px;"><strong>Detalhes por Trecho:</strong></p>
+                <div *ngFor="let item of viagem.resultado.trechos; let i = index" style="margin-bottom: 8px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px;">
+                  <p style="margin: 3px 0; font-size: 0.9em;"><strong>Trecho {{ i + 1 }}:</strong> {{ formatarMeioTransporte(item.trecho.meioTransporte) }}</p>
+                  <p style="margin: 3px 0; font-size: 0.9em;">Distância: {{ item.distancia }} km | Emissão: {{ item.emissao }} kg CO₂</p>
+                </div>
+              </div>
+            </div>
+            <p *ngIf="viagem.observacoes" style="margin-top: 10px;"><strong>Observações:</strong> {{ viagem.observacoes }}</p>
+            <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
+              <strong>Calculado em:</strong> {{ formatarData(viagem.dataCalculo) }}
+            </p>
+          </div>
+          <button (click)="excluirViagem(i)" class="btn-danger" style="margin-left: 15px;">
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,54 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <img src="assets/logo.png" alt="Credit Carb" class="login-logo" />
+      <h2>Acesso Administrativo</h2>
+      <p>Faça login para acessar o painel de administrador</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="username">Usuário</label>
+        <input 
+          type="text" 
+          id="username" 
+          formControlName="username" 
+          placeholder="Digite seu usuário"
+          [class.error]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
+        />
+        <div class="error-message" *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched">
+          Usuário é obrigatório
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Senha</label>
+        <input 
+          type="password" 
+          id="password" 
+          formControlName="password" 
+          placeholder="Digite sua senha"
+          [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+        />
+        <div class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+          Senha é obrigatória
+        </div>
+      </div>
+
+      <div class="error-message" *ngIf="errorMessage" style="margin-top: 10px;">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" [disabled]="loading || loginForm.invalid" class="btn-login">
+        <span *ngIf="!loading">🔐 Entrar</span>
+        <span *ngIf="loading">⏳ Entrando...</span>
+      </button>
+    </form>
+
+    <div class="login-info">
+      <small>Credenciais padrão: admin / admin123</small>
+    </div>
+  </div>
+</div>
+
+
