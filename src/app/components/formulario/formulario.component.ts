@@ -164,9 +164,8 @@ export class FormularioComponent implements OnInit {
       destinoEstado: [''],
       destinoPais: ['Brasil'],
       
-      // Datas
-      dataViagem: ['', Validators.required],
-      dataRetorno: [''],
+      // Informações do evento
+      diasNoEvento: ['', [Validators.required, Validators.min(1)]],
       idaEVolta: [false],
       
       // Observações
@@ -175,15 +174,6 @@ export class FormularioComponent implements OnInit {
 
     // Inicializar com um trecho vazio
     this.trechos = [this.criarTrechoVazio()];
-
-    this.formulario.get('idaEVolta')?.valueChanges.subscribe(valor => {
-      if (valor) {
-        this.formulario.get('dataRetorno')?.setValidators([Validators.required]);
-      } else {
-        this.formulario.get('dataRetorno')?.clearValidators();
-      }
-      this.formulario.get('dataRetorno')?.updateValueAndValidity();
-    });
   }
 
   criarTrechoVazio(): TrechoViagem {
@@ -251,7 +241,7 @@ export class FormularioComponent implements OnInit {
     }
 
     // Validar campos obrigatórios
-    const camposObrigatorios = ['nome', 'email', 'cpf', 'telefone', 'dataViagem'];
+    const camposObrigatorios = ['nome', 'email', 'cpf', 'telefone', 'diasNoEvento'];
     const camposInvalidos = camposObrigatorios.filter(campo => {
       const control = this.formulario.get(campo);
       return !control || control.invalid;
@@ -423,6 +413,11 @@ export class FormularioComponent implements OnInit {
 
   trackByTrechoIndex(index: number, trecho: TrechoViagem): number {
     return index;
+  }
+
+  toggleIdaEVolta(): void {
+    const currentValue = this.formulario.get('idaEVolta')?.value;
+    this.formulario.patchValue({ idaEVolta: !currentValue });
   }
 }
 

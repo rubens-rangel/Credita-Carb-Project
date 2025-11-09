@@ -28,8 +28,7 @@ export interface ViagemData {
   destinoEstado: string;
   destinoPais: string;
   trechos: TrechoViagem[];
-  dataViagem: string;
-  dataRetorno?: string;
+  diasNoEvento: number;
   idaEVolta: boolean;
   observacoes?: string;
 }

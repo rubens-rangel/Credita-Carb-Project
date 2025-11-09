@@ -112,7 +112,7 @@
           <th>E-mail</th>
           <th>Origem → Destino</th>
           <th>Transporte</th>
-          <th>Data</th>
+          <th>Dias no Evento</th>
           <th>Emissão CO₂</th>
           <th>Créditos</th>
           <th>Ações</th>
@@ -145,7 +145,7 @@
               {{ formatarMeioTransporte(viagem.meioTransporte || 'N/A') }}
             </span>
           </td>
-          <td>{{ formatarData(viagem.dataViagem) }}</td>
+          <td>{{ viagem.diasNoEvento || '-' }} {{ viagem.diasNoEvento === 1 ? 'dia' : 'dias' }}</td>
           <td><strong>{{ viagem.resultado?.emissaoCO2 || 0 }} kg</strong></td>
           <td>{{ viagem.resultado?.creditosCarbono || 0 }} tCO₂</td>
           <td>
@@ -192,9 +192,8 @@
               <p *ngIf="viagem.tipoCombustivel"><strong>Combustível:</strong> {{ viagem.tipoCombustivel }}</p>
               <p *ngIf="viagem.numeroPassageiros"><strong>Passageiros:</strong> {{ viagem.numeroPassageiros }}</p>
             </div>
-            <p><strong>Data da Viagem:</strong> {{ formatarData(viagem.dataViagem) }}</p>
-            <p *ngIf="viagem.idaEVolta"><strong>Data de Retorno:</strong> {{ formatarData(viagem.dataRetorno) }}</p>
-            <p *ngIf="viagem.idaEVolta"><strong>Tipo:</strong> Ida e Volta</p>
+            <p><strong>Dias no Evento:</strong> {{ viagem.diasNoEvento || '-' }} {{ viagem.diasNoEvento === 1 ? 'dia' : 'dias' }}</p>
+            <p *ngIf="viagem.idaEVolta"><strong>Tipo:</strong> Viagem de Ida e Volta</p>
             <hr style="margin: 15px 0; border: none; border-top: 1px solid #e0e0e0;">
             <div class="result-card" style="margin-top: 10px;">
               <p><strong>Emissão de CO₂:</strong> {{ viagem.resultado?.emissaoCO2 || 0 }} kg</p>

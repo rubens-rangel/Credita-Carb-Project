@@ -1,5 +1,5 @@
 <div class="card">
-  <h2>📝 Formulário de Cálculo de Crédito de Carbono</h2>
+  <h2>🌍 Calcule Seu Impacto Ambiental</h2>
   
   <!-- Informação do Evento -->
   <div *ngIf="evento" class="evento-info">
@@ -9,8 +9,9 @@
     <p *ngIf="evento.dataInicio"><strong>Data:</strong> {{ evento.dataInicio }} <span *ngIf="evento.dataFim">até {{ evento.dataFim }}</span></p>
   </div>
   
-  <p style="margin-bottom: 20px; color: #666;">
-    Preencha os dados da sua viagem para calcular a emissão de CO₂ e os créditos de carbono gerados.
+  <p style="margin-bottom: 20px; color: #666; font-size: 1.1em; line-height: 1.6;">
+    Descubra quantas árvores precisam ser plantadas para compensar sua viagem! 💚<br>
+    Em poucos minutos, você saberá seu impacto ambiental e como contribuir para um planeta mais verde.
   </p>
 
   <form [formGroup]="formulario" (ngSubmit)="calcular()">
@@ -180,29 +181,41 @@
       ➕ Adicionar Outro Trecho
     </button>
 
-    <!-- Datas -->
-    <h3 style="margin-top: 30px; margin-bottom: 15px; color: #2d8659;">📅 Datas da Viagem</h3>
+    <!-- Informações do Evento -->
+    <h3 style="margin-top: 30px; margin-bottom: 15px; color: #2d8659;">📅 Informações do Evento</h3>
     <div class="form-row">
       <div class="form-group">
-        <label>Data da Viagem *</label>
-        <input type="date" formControlName="dataViagem" [class.error]="campoInvalido('dataViagem')">
-        <div class="error-message" *ngIf="campoInvalido('dataViagem')">
-          Data da viagem é obrigatória
+        <label>Quantidade de dias no evento *</label>
+        <input type="number" formControlName="diasNoEvento" min="1" placeholder="Ex: 3" [class.error]="campoInvalido('diasNoEvento')">
+        <small style="color: #666;">Quantos dias você ficará participando do evento?</small>
+        <div class="error-message" *ngIf="campoInvalido('diasNoEvento')">
+          Informe quantos dias você ficará no evento
         </div>
       </div>
-      <div class="form-group">
-        <label>
-          <input type="checkbox" formControlName="idaEVolta" style="width: auto; margin-right: 8px;">
-          Ida e Volta
-        </label>
-      </div>
-      <div class="form-group" *ngIf="formulario.get('idaEVolta')?.value">
-        <label>Data de Retorno *</label>
-        <input type="date" formControlName="dataRetorno" [class.error]="campoInvalido('dataRetorno')">
-        <div class="error-message" *ngIf="campoInvalido('dataRetorno')">
-          Data de retorno é obrigatória
+    </div>
+
+    <!-- Viagem de Ida e Volta - Melhorado -->
+    <div class="ida-volta-container" style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border-radius: 12px; border: 2px solid #4caf50;">
+      <div style="display: flex; align-items: center; gap: 15px; cursor: pointer;" (click)="toggleIdaEVolta()">
+        <div class="toggle-switch" [class.active]="formulario.get('idaEVolta')?.value">
+          <div class="toggle-slider"></div>
+        </div>
+        <div style="flex: 1;">
+          <label style="font-weight: 600; color: #2d8659; font-size: 1.1em; cursor: pointer; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <span>🔄</span>
+            <span>Viagem de Ida e Volta</span>
+          </label>
+          <p style="margin: 8px 0 0 0; color: #555; font-size: 0.95em; line-height: 1.5;">
+            <span *ngIf="!formulario.get('idaEVolta')?.value">
+              Você está calculando apenas a ida. Marque esta opção se também retornará ao local de origem.
+            </span>
+            <span *ngIf="formulario.get('idaEVolta')?.value" style="color: #2d8659; font-weight: 500;">
+              ✓ O cálculo incluirá a viagem de ida e volta. A emissão será calculada para ambos os trajetos.
+            </span>
+          </p>
         </div>
       </div>
+      <input type="checkbox" formControlName="idaEVolta" style="display: none;">
     </div>
 
     <!-- Observações -->
@@ -229,17 +242,40 @@
   <!-- Resultado do Cálculo -->
   <div *ngIf="calculado && resultado && !carregando" class="result-card">
     <h3>📊 Resultado do Cálculo</h3>
+    <div *ngIf="formulario.get('idaEVolta')?.value" style="background: rgba(76, 175, 80, 0.2); padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4caf50;">
+      <p style="margin: 0; color: white; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+        <span>🔄</span>
+        <span>Viagem de Ida e Volta - A emissão inclui ambos os trajetos</span>
+      </p>
+    </div>
     <div class="result-value">{{ resultado.emissaoCO2 }} kg CO₂</div>
     <p style="margin: 15px 0;">
       <strong>Distância Total:</strong> {{ resultado.distanciaTotal }} km
+      <span *ngIf="formulario.get('idaEVolta')?.value" style="color: #4caf50; font-size: 0.9em; margin-left: 8px;">
+        (ida + volta)
+      </span>
     </p>
     
     <!-- Detalhes dos Trechos -->
     <div *ngIf="resultado.trechos && resultado.trechos.length > 0" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3);">
-      <h4 style="color: white; margin-bottom: 10px;">Detalhes por Trecho:</h4>
+      <h4 style="color: white; margin-bottom: 10px;">
+        Detalhes por Trecho:
+        <span *ngIf="formulario.get('idaEVolta')?.value" style="font-size: 0.85em; color: #4caf50; margin-left: 8px;">
+          (valores já incluem ida e volta)
+        </span>
+      </h4>
       <div *ngFor="let item of resultado.trechos; let i = index" style="margin-bottom: 10px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px;">
         <p style="margin: 5px 0;"><strong>Trecho {{ i + 1 }}:</strong> {{ formatarMeioTransporte(item.trecho.meioTransporte) }}</p>
-        <p style="margin: 5px 0;">Distância: {{ item.distancia }} km | Emissão: {{ item.emissao }} kg CO₂</p>
+        <p style="margin: 5px 0;">
+          Distância: {{ item.distancia }} km 
+          <span *ngIf="formulario.get('idaEVolta')?.value" style="color: #4caf50; font-size: 0.9em;">
+            ({{ item.distancia / 2 }} km × 2)
+          </span>
+          | Emissão: {{ item.emissao }} kg CO₂
+          <span *ngIf="formulario.get('idaEVolta')?.value" style="color: #4caf50; font-size: 0.9em;">
+            ({{ item.emissao / 2 }} kg × 2)
+          </span>
+        </p>
       </div>
     </div>
     <p style="margin: 15px 0;">

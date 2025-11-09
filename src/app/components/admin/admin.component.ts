@@ -141,8 +141,7 @@ export class AdminComponent implements OnInit {
       'Destino (Cidade)',
       'Destino (Estado)',
       'Destino (País)',
-      'Data Viagem',
-      'Data Retorno',
+      'Dias no Evento',
       'Ida e Volta',
       'Distância Total (km)',
       'Emissão CO₂ (kg)',
@@ -173,8 +172,7 @@ export class AdminComponent implements OnInit {
         viagem.destinoCidade || '',
         viagem.destinoEstado || '',
         viagem.destinoPais || '',
-        viagem.dataViagem ? new Date(viagem.dataViagem).toLocaleDateString('pt-BR') : '',
-        viagem.dataRetorno ? new Date(viagem.dataRetorno).toLocaleDateString('pt-BR') : '',
+        viagem.diasNoEvento || '',
         viagem.idaEVolta ? 'Sim' : 'Não',
         viagem.resultado?.distanciaTotal || viagem.resultado?.distanciaCalculada || 0,
         viagem.resultado?.emissaoCO2 || 0,
@@ -184,9 +182,9 @@ export class AdminComponent implements OnInit {
       ];
     });
 
-    // Adicionar linha de totais (11 campos antes de TOTAIS: nome, email, cpf, telefone, trechos, destino cidade, estado, pais, data viagem, retorno, ida/volta)
+    // Adicionar linha de totais (10 campos antes de TOTAIS: nome, email, cpf, telefone, trechos, destino cidade, estado, pais, dias no evento, ida/volta)
     linhas.push([
-      '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '',
       'TOTAIS',
       this.totalEmissao.toFixed(2),
       this.totalCreditos.toFixed(3),
